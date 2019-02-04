@@ -34,7 +34,7 @@ public class RecipeServiceImpl implements RecipeService {
 	@Override
 	public Recipe get(String id) {
 
-		return recipeRepository.findRecipeById(id);
+		return recipeRepository.findById(id).get();
 	}
 
 	@Override
