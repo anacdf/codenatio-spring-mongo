@@ -21,9 +21,9 @@ public class RecipeServiceImpl implements RecipeService {
 	}
 
 	@Override
-	public void update(String id, Recipe recipe) {
-
-		recipeRepository.save(recipe);
+	public void update(Recipe recipe) {
+		Recipe rcp = recipeRepository.findById(recipe.getId()).get();
+		recipeRepository.save(rcp);
 	}
 
 	@Override

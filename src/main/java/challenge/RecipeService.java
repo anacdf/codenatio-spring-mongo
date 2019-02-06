@@ -6,7 +6,7 @@ public interface RecipeService {
 
 	Recipe save(Recipe recipe);
 
-	void update(String id, Recipe recipe);
+	void update(Recipe recipe);
 
 	void delete(String id);
 

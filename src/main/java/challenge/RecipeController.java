@@ -4,9 +4,8 @@ import java.util.List;
 
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import javax.xml.ws.Response;
 
 @RestController
 @RequestMapping(value = "/recipe")
@@ -21,9 +20,10 @@ public class RecipeController {
 	}
 
 	@PutMapping(value = "/{id}")
-	public void update(@RequestBody Recipe recipe, @PathVariable("id") String id ) {
+	public ResponseEntity<Object> update(@RequestBody Recipe recipe, @PathVariable("id") String id ) {
 		recipe.setId(id);
-	    service.update(id, recipe);
+	    service.update(recipe);
+	    return ResponseEntity.ok().build();
 
 		//Path to difference: <ingredients>
         //- actual  : <["ovo", "chocolate", "farinha"]>
