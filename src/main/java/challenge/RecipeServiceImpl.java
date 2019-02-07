@@ -3,8 +3,12 @@ package challenge;
 import java.util.*;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.ResponseBody;
 
 @Service
 public class RecipeServiceImpl implements RecipeService {
@@ -12,7 +16,8 @@ public class RecipeServiceImpl implements RecipeService {
 	@Autowired
 	private RecipeRepository recipeRepository;
 
-	private Integer count=0;
+	@Autowired
+	private MongoTemplate mongoTemplate;
 
 	@Override
 	public Recipe save(Recipe recipe) {
@@ -21,55 +26,65 @@ public class RecipeServiceImpl implements RecipeService {
 	}
 
 	@Override
-	public void update(String id, Recipe recipe) {
-
-		recipeRepository.save(recipe);
-	}
-
-	@Override
 	public void delete(String id) {
 		recipeRepository.deleteById(id);
 	}
 
 	@Override
-	public Recipe get(String id) {
+	public void update(String id, Recipe recipe) {
+		mongoTemplate.updateFirst(
+				Query.query(Criteria.where("_id").is(id)),
+				Update.update("title", recipe.getTitle())
+						.set("description", recipe.getDescription())
+						.set("ingredients", recipe.getIngredients()),
+				Recipe.class);
 
-		return recipeRepository.findById(id).get();
 	}
 
 	@Override
-	public List<Recipe> listByIngredient(String ingredient) {
-
-		return recipeRepository.findAllByIngredientsContaining(ingredient);
+	public Optional<Recipe> get(String id) {
+		return recipeRepository.findById(id);
 	}
 
-	@Override
-	public List<Recipe> search(String search) {
-		//return recipeRepository.findAllByTitleContainingOrDescriptionContainingIgnoreCase(search);
-		//return recipeRepository.findRecipeByTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCase(search);
-		return recipeRepository.findRecipeByTitleOrDescription(search);
 
-		//return null;
-		//Deve pesquisar nos campos title e description
-		//Deve pesquisar em qualquer lugar do texto
-		//Deve pesquisar usando case-insensitive
-		//Ordenar pelo campo title em ordem alfabética ascendente.
-		//Ex: /recipe/search?search=choco
+    @Override
+    public List<Recipe> listByIngredient(String ingredient) {
+
+        return mongoTemplate.find(
+                Query.query(Criteria.where("ingredients").is(ingredient)).with(Sort.by("title").ascending()),
+                Recipe.class);
+
+    }
+
+    @Override
+    public List<Recipe> search(String search) {
+	    search.toLowerCase();
+
+        return mongoTemplate.find(Query.query(new Criteria()
+                        .orOperator(Criteria.where("title").regex(search, "i"),
+                                Criteria.where("description").regex(search, "i")))
+                        .with(Sort.by("title").ascending()),
+                Recipe.class);
 	}
+
 
 	@Override
 	public void like(String id, String userId) {
-		Optional<Recipe> recipe = recipeRepository.findById(id);
-		recipe.ifPresent(recipe1 -> recipe1.getLikes().add(userId));
-		save(recipe.get());
-		//user id
+	    mongoTemplate.updateFirst(
+	            Query.query(
+	                    Criteria.where("_id").is(id)),
+                new Update().addToSet("likes", userId),
+                Recipe.class);
+
 	}
 
 	@Override
 	public void unlike(String id, String userId) {
-		Optional<Recipe> recipe = recipeRepository.findById(id);
-		recipe.ifPresent(recipe1 -> recipe1.getLikes().remove(userId));
-		this.save(recipe.get());
+		mongoTemplate.updateFirst(
+		        Query.query(
+		                Criteria.where("_id").is(id)),
+                new Update().pull("likes", userId),
+                Recipe.class);
 	}
 
 	@Override
