@@ -2,6 +2,7 @@ package challenge;
 
 import java.util.*;
 
+import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -18,6 +19,9 @@ public class RecipeServiceImpl implements RecipeService {
 
 	@Autowired
 	private MongoTemplate mongoTemplate;
+
+	@Autowired
+	private RecipeCommentRepository recipeCommentRepository;
 
 	@Override
 	public Recipe save(Recipe recipe) {
@@ -89,26 +93,27 @@ public class RecipeServiceImpl implements RecipeService {
 
 	@Override
 	public RecipeComment addComment(String id, RecipeComment comment) {
-		Recipe recipe = recipeRepository.findById(id).get();
-		Stack<RecipeComment> comments = new Stack<>();
-		comments.push(comment);
-		recipe.setComments(comments);
-		this.save(recipe);
-		return comments.get(0);
+		comment.setId(new ObjectId().toString());
+		recipeCommentRepository.save(comment);
+		mongoTemplate.updateFirst(
+				Query.query(Criteria.where("_id").is(id)), new Update().addToSet("comments", comment),
+				Recipe.class);
+		return comment;
 	}
 
 	@Override
 	public void updateComment(String id, String commentId, RecipeComment comment) {
-		Recipe recipe = recipeRepository.findById(id).get();
-		recipe.getComments().stream().filter(comment1 -> comment1.equals(commentId))
-				.forEach(comment1 -> comment1.setComment(comment.getComment()));
-		this.save(recipe);
+		mongoTemplate.updateFirst(
+				Query.query(Criteria.where("_id").is(id).and("comments._id").is(commentId)),
+				Update.update("comments.$.comment", comment.getComment()),
+				Recipe.class);
 	}
 
 	@Override
 	public void deleteComment(String id, String commentId) {
-		Recipe recipe = recipeRepository.findById(id).get();
-		recipe.getComments().stream().filter(comment1 -> comment1.equals(commentId));
+		mongoTemplate.updateFirst(
+				Query.query(Criteria.where("_id").is(id)),
+				new Update().pull("comments", Query.query(Criteria.where("_id").is(commentId))),
+				Recipe.class);
 	}
-
 }
