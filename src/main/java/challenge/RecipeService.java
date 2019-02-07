@@ -1,16 +1,17 @@
 package challenge;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface RecipeService {
 
 	Recipe save(Recipe recipe);
 
-	void update(Recipe recipe);
+	void update(String id, Recipe recipe);
 
 	void delete(String id);
 
-	Recipe get(String id);
+	Optional<Recipe> get(String id);
 
 	List<Recipe> listByIngredient(String ingredient);
 

@@ -8,8 +8,6 @@ import java.util.List;
 @Repository
 public interface RecipeRepository extends MongoRepository<Recipe, String> {
 
-    Recipe findRecipeById(String id);
-
     List<Recipe> findAllByIngredients(String ingredient);
 
     List<Recipe> findAllByIngredientsContaining(String ingredient);

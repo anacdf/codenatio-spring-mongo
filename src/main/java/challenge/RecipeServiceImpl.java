@@ -3,8 +3,11 @@ package challenge;
 import java.util.*;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.ResponseBody;
 
 @Service
 public class RecipeServiceImpl implements RecipeService {
@@ -12,7 +15,8 @@ public class RecipeServiceImpl implements RecipeService {
 	@Autowired
 	private RecipeRepository recipeRepository;
 
-	private Integer count=0;
+	@Autowired
+	private MongoTemplate mongoTemplate;
 
 	@Override
 	public Recipe save(Recipe recipe) {
@@ -21,21 +25,24 @@ public class RecipeServiceImpl implements RecipeService {
 	}
 
 	@Override
-	public void update(Recipe recipe) {
-		Recipe rcp = recipeRepository.findById(recipe.getId()).get();
-		recipeRepository.save(rcp);
-
-	}
-
-	@Override
 	public void delete(String id) {
 		recipeRepository.deleteById(id);
 	}
 
 	@Override
-	public Recipe get(String id) {
+	public Optional<Recipe> get(String id) {
+		return recipeRepository.findById(id);
+	}
 
-		return recipeRepository.findById(id).get();
+	@Override
+	public void update(String id, Recipe recipe) {
+		mongoTemplate.updateFirst(
+				Query.query(Criteria.where("_id").is(id)),
+				Update.update("title", recipe.getTitle())
+						.set("description", recipe.getDescription())
+						.set("ingredients", recipe.getIngredients()),
+				Recipe.class);
+
 	}
 
 	@Override

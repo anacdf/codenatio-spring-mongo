@@ -1,6 +1,7 @@
 package challenge;
 
 import java.util.List;
+import java.util.Optional;
 
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,7 +45,7 @@ public class RecipeController {
 	}
 
 	@GetMapping(value = "/{id}")
-	public Recipe get(@PathVariable("id") String id) {
+	public Optional<Recipe> get(@PathVariable("id") String id) {
 		return service.get(id);
 	}
 
